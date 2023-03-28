@@ -9,7 +9,6 @@ import (
 )
 
 type Metrics struct {
-	MetricType            string   `yaml:"metricType" json:"metricType,omitempty"`
 	MetricWeight          *float64 `yaml:"metricWeight" json:"metricWeight,omitempty"`
 	NanStrategy           string   `yaml:"nanStrategy" json:"nanStrategy,omitempty"`
 	AccountName           string   `yaml:"accountName" json:"accountName,omitempty"`
@@ -32,31 +31,14 @@ type Data struct {
 	Groups      []Groups `yaml:"groups" json:"groups"`
 }
 type MetricISDTemplate struct {
-	FilterKey        string   `yaml:"filterKey" json:"filterKey,omitempty"`
-	AccountName      string   `yaml:"accountName" json:"accountName,omitempty"`
-	Data             Data     `yaml:"metricTemplateSetup" json:"data"`
-	TemplateName     string   `yaml:"templateName" json:"templateName,omitempty"`
-	AdvancedProvider string   `yaml:"advancedProvider" json:"advancedProvider,omitempty"`
-	MetricType       string   `yaml:"metricType" json:"metricType,omitempty"`
-	MetricWeight     *float64 `yaml:"metricWeight" json:"metricWeight,omitempty"`
-	NanStrategy      string   `yaml:"nanStrategy" json:"nanStrategy,omitempty"`
-	Criticality      string   `yaml:"criticality" json:"criticality,omitempty"`
-}
-
-func (m *MetricISDTemplate) setMetricType(templateName string) {
-	//metricType
-	if m.MetricType == "" {
-		log.Infof("the metricType field is not defined at the global level for metric template %s, values at the metric level will be used", templateName)
-		return
-	}
-	for _, metric := range m.Data.Groups {
-		for i := range metric.Metrics {
-			if metric.Metrics[i].MetricType == "" {
-				metric.Metrics[i].MetricType = m.MetricType
-			}
-		}
-	}
-	m.MetricType = ""
+	FilterKey          string   `yaml:"filterKey" json:"filterKey,omitempty"`
+	AccountName        string   `yaml:"accountName" json:"accountName,omitempty"`
+	Data               Data     `yaml:"metricTemplateSetup" json:"data"`
+	TemplateName       string   `yaml:"templateName" json:"templateName,omitempty"`
+	MonitoringProvider string   `yaml:"monitoringProvider" json:"monitoringProvider,omitempty"`
+	MetricWeight       *float64 `yaml:"metricWeight" json:"metricWeight,omitempty"`
+	NanStrategy        string   `yaml:"nanStrategy" json:"nanStrategy,omitempty"`
+	Criticality        string   `yaml:"criticality" json:"criticality,omitempty"`
 }
 
 func (m *MetricISDTemplate) setMetricWeight(templateName string) {
@@ -140,7 +122,6 @@ func processYamlMetrics(templateData []byte, templateName string, scopeVariables
 
 	metric.setFilterKey(templateName, scopeVariables)
 	metric.setTemplateName(templateName)
-	metric.setMetricType(templateName)
 	metric.setMetricWeight(templateName)
 	metric.setNanStrategy(templateName)
 	metric.setCriticality(templateName)
