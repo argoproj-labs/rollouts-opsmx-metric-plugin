@@ -55,7 +55,7 @@ func TestRun(t *testing.T) {
 		metric := v1alpha1.Metric{
 			Name: "testapp",
 			Provider: v1alpha1.MetricProvider{
-				Plugin: map[string]json.RawMessage{"opsmx": json.RawMessage([]byte(`{"application":"newapp","lifetimeMinutes":9,"passScore":90,"marginalScore":85,"serviceList":[{"logTemplateName":"logtemp","logScopeVariables":"pod_name","baselineLogScope":"podHashBaseline","canaryLogScope":"podHashCanary"}]}`))}},
+				Plugin: map[string]json.RawMessage{opsmxPlugin: json.RawMessage([]byte(`{"application":"newapp","lifetimeMinutes":9,"passScore":90,"marginalScore":85,"serviceList":[{"logTemplateName":"logtemp","logScopeVariables":"pod_name","baselineLogScope":"podHashBaseline","canaryLogScope":"podHashCanary"}]}`))}},
 		}
 
 		measurement := rpcPluginImp.Run(newAnalysisRun(), metric)
@@ -83,7 +83,7 @@ func TestResume(t *testing.T) {
 	metric := v1alpha1.Metric{
 		Name: "testapp",
 		Provider: v1alpha1.MetricProvider{
-			Plugin: map[string]json.RawMessage{"opsmx": json.RawMessage([]byte(`{"application":"newapp","lifetimeMinutes":9,"passScore":90,"marginalScore":85,"serviceList":[{"logTemplateName":"logtemp","logScopeVariables":"pod_name","baselineLogScope":"podHashBaseline","canaryLogScope":"podHashCanary"}]}`))}},
+			Plugin: map[string]json.RawMessage{opsmxPlugin: json.RawMessage([]byte(`{"application":"newapp","lifetimeMinutes":9,"passScore":90,"marginalScore":85,"serviceList":[{"logTemplateName":"logtemp","logScopeVariables":"pod_name","baselineLogScope":"podHashBaseline","canaryLogScope":"podHashCanary"}]}`))}},
 	}
 
 	mapMetadata := make(map[string]string)
