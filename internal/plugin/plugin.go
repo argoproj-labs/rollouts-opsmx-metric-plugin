@@ -34,7 +34,7 @@ const (
 	cdIntegrationArgoCD       = "argocd"
 	templateLog               = "LOG"
 	templateMetric            = "METRIC"
-	opsmxPlugin               = "opsmx"
+	opsmxPlugin               = "argoproj-labs/rollouts-opsmx-metric-plugin"
 )
 
 // Here is a real implementation of MetricsPlugin
@@ -51,7 +51,7 @@ type opsmxProfile struct {
 	user          string
 }
 
-func (g *RpcPlugin) NewMetricsPlugin(metric v1alpha1.Metric) types.RpcError {
+func (g *RpcPlugin) InitPlugin() types.RpcError {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return types.RpcError{ErrorString: err.Error()}
