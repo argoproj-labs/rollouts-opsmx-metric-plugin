@@ -49,6 +49,7 @@ type opsmxProfile struct {
 	opsmxIsdUrl   string
 	sourceName    string
 	user          string
+	agentName     string
 }
 
 func (g *RpcPlugin) InitPlugin() types.RpcError {
@@ -327,6 +328,14 @@ func getSecretData(g *RpcPlugin, metric OPSMXMetric, namespace string) (opsmxPro
 		return opsmxProfile{}, err
 	}
 	secret.cdIntegration = string(secretcdintegration)
+
+	secretAgentName, ok := v1Secret.Data["agentName"]
+	if !ok && string(secretcdintegration) == "true" {
+		err = errors.New("opsmx profile secret validation error: `agentName` key not present in the secret file\n Action Required: secret file must carry data element 'agentName' for 'cdIntegration' as 'true'")
+		return opsmxProfile{}, err
+	}
+
+	secret.agentName = string(secretAgentName)
 
 	if secret.cdIntegration != "true" && secret.cdIntegration != "false" {
 		err := errors.New("opsmx profile secret validation error: `cdIntegration` should be either true or false")

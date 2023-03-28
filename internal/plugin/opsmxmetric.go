@@ -47,6 +47,7 @@ type jobPayload struct {
 	Application       string              `json:"application"`
 	SourceName        string              `json:"sourceName"`
 	SourceType        string              `json:"sourceType"`
+	AgentName         string              `json:"agentName,omitempty"`
 	CanaryConfig      canaryConfig        `json:"canaryConfig"`
 	CanaryDeployments []canaryDeployments `json:"canaryDeployments"`
 }
@@ -288,6 +289,7 @@ func (metric *OPSMXMetric) generatePayload(opsmxProfileData opsmxProfile, servic
 	payload := jobPayload{Application: metric.Application,
 		SourceName: opsmxProfileData.sourceName,
 		SourceType: opsmxProfileData.cdIntegration,
+		AgentName:  opsmxProfileData.agentName,
 		CanaryConfig: canaryConfig{
 			LifetimeMinutes: fmt.Sprintf("%d", metric.LifetimeMinutes),
 			LookBackType:    metric.LookBackType,

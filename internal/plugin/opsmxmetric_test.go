@@ -26,7 +26,9 @@ func TestOpsmxMetricValidations(t *testing.T) {
 	opsmxProfileData := opsmxProfile{cdIntegration: "true",
 		user:        "admin",
 		sourceName:  "sourceName",
-		opsmxIsdUrl: "https://opsmx.test.tst"}
+		opsmxIsdUrl: "https://opsmx.test.tst",
+		agentName:   "agent123",
+	}
 
 	t.Run("pass score is less than marginal score - an error should be raised", func(t *testing.T) {
 		opsmxMetric := OPSMXMetric{Application: "newapp",
@@ -469,7 +471,8 @@ func TestOpsmxMetricVariousFlows(t *testing.T) {
 	opsmxProfileData := opsmxProfile{cdIntegration: "argocd",
 		user:        "admin",
 		sourceName:  "sourceName",
-		opsmxIsdUrl: "https://opsmx.test.tst"}
+		opsmxIsdUrl: "https://opsmx.test.tst",
+		agentName:   "agent123"}
 
 	t.Run("basic no gitops single service - no error should be raised", func(t *testing.T) {
 		opsmxMetric := OPSMXMetric{Application: "newapp",
@@ -489,7 +492,7 @@ func TestOpsmxMetricVariousFlows(t *testing.T) {
 				MetricTemplateVersion: "v1.0",
 			}},
 		}
-		expectedPayload := `{"application":"newapp","sourceName":"sourceName","sourceType":"argocd","canaryConfig":{"lifetimeMinutes":"30","lookBackType":"growing","interval":"3","delay":"1","canaryHealthCheckHandler":{"minimumCanaryResultScore":"85"},"canarySuccessCriteria":{"canaryResultScore":"90"}},"canaryDeployments":[{"canaryStartTimeMs":"1660137300000","baselineStartTimeMs":"1660137300000","canary":{"metric":{"service1":{"serviceGate":"gate1","pod_name":"podHashCanary","template":"metrictemplate","templateVersion":"v1.0"}}},"baseline":{"metric":{"service1":{"serviceGate":"gate1","pod_name":"podHashBaseline","template":"metrictemplate","templateVersion":"v1.0"}}}}]}`
+		expectedPayload := `{"application":"newapp","sourceName":"sourceName","sourceType":"argocd","agentName":"agent123","canaryConfig":{"lifetimeMinutes":"30","lookBackType":"growing","interval":"3","delay":"1","canaryHealthCheckHandler":{"minimumCanaryResultScore":"85"},"canarySuccessCriteria":{"canaryResultScore":"90"}},"canaryDeployments":[{"canaryStartTimeMs":"1660137300000","baselineStartTimeMs":"1660137300000","canary":{"metric":{"service1":{"serviceGate":"gate1","pod_name":"podHashCanary","template":"metrictemplate","templateVersion":"v1.0"}}},"baseline":{"metric":{"service1":{"serviceGate":"gate1","pod_name":"podHashBaseline","template":"metrictemplate","templateVersion":"v1.0"}}}}]}`
 		payload, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
 		expectedBodyI, bodyI := getPayload(expectedPayload, payload)
 		assert.Equal(t, expectedBodyI, bodyI)
@@ -523,7 +526,7 @@ func TestOpsmxMetricVariousFlows(t *testing.T) {
 				},
 			},
 		}
-		expectedPayload := `{"application":"newapp","sourceName":"sourceName","sourceType":"argocd","canaryConfig":{"lifetimeMinutes":"30","canaryHealthCheckHandler":{"minimumCanaryResultScore":"85"},"canarySuccessCriteria":{"canaryResultScore":"90"}},"canaryDeployments":[{"canaryStartTimeMs":"1660137300000","baselineStartTimeMs":"1660137300000","canary":{"log":{"service2":{"serviceGate":"gate2","kubernetes.container_name":"oes-datascience-cr","template":"logTemplate"}},"metric":{"service1":{"serviceGate":"gate1","job_name":"oes-platform-cr","template":"metricTemplate"},"service2":{"serviceGate":"gate2","job_name":"oes-sapor-cr","template":"metricTemplate"}}},"baseline":{"log":{"service2":{"serviceGate":"gate2","kubernetes.container_name":"oes-datascience-br","template":"logTemplate"}},"metric":{"service1":{"serviceGate":"gate1","job_name":"oes-platform-br","template":"metricTemplate"},"service2":{"serviceGate":"gate2","job_name":"oes-sapor-br","template":"metricTemplate"}}}}]}`
+		expectedPayload := `{"application":"newapp","sourceName":"sourceName","sourceType":"argocd","agentName":"agent123","canaryConfig":{"lifetimeMinutes":"30","canaryHealthCheckHandler":{"minimumCanaryResultScore":"85"},"canarySuccessCriteria":{"canaryResultScore":"90"}},"canaryDeployments":[{"canaryStartTimeMs":"1660137300000","baselineStartTimeMs":"1660137300000","canary":{"log":{"service2":{"serviceGate":"gate2","kubernetes.container_name":"oes-datascience-cr","template":"logTemplate"}},"metric":{"service1":{"serviceGate":"gate1","job_name":"oes-platform-cr","template":"metricTemplate"},"service2":{"serviceGate":"gate2","job_name":"oes-sapor-cr","template":"metricTemplate"}}},"baseline":{"log":{"service2":{"serviceGate":"gate2","kubernetes.container_name":"oes-datascience-br","template":"logTemplate"}},"metric":{"service1":{"serviceGate":"gate1","job_name":"oes-platform-br","template":"metricTemplate"},"service2":{"serviceGate":"gate2","job_name":"oes-sapor-br","template":"metricTemplate"}}}}]}`
 		payload, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
 		expectedBodyI, bodyI := getPayload(expectedPayload, payload)
 		assert.Equal(t, expectedBodyI, bodyI)
@@ -545,7 +548,7 @@ func TestOpsmxMetricVariousFlows(t *testing.T) {
 			}},
 		}
 		c := NewTestClient(func(req *http.Request) (*http.Response, error) {
-			assert.Equal(t, "https://opsmx.test.tst/autopilot/api/v5/external/template?sha1=a5b311c084cebce5b2e40b388e2e11c6e397c970&templateName=metrictemplate&templateType=METRIC", req.URL.String())
+			assert.Equal(t, "https://opsmx.test.tst/autopilot/api/v5/external/template?sha1=e6128e21c84c25a8e2a10937991efcad42fe86cf&templateName=metrictemplate&templateType=METRIC", req.URL.String())
 			return &http.Response{
 				StatusCode: 200,
 				Body: io.NopCloser(bytes.NewBufferString(`
@@ -595,7 +598,7 @@ func TestOpsmxMetricVariousFlows(t *testing.T) {
 			}},
 		}
 		c := NewTestClient(func(req *http.Request) (*http.Response, error) {
-			assert.Equal(t, "https://opsmx.test.tst/autopilot/api/v5/external/template?sha1=a5b311c084cebce5b2e40b388e2e11c6e397c970&templateName=metrictemplate&templateType=METRIC", req.URL.String())
+			assert.Equal(t, "https://opsmx.test.tst/autopilot/api/v5/external/template?sha1=e6128e21c84c25a8e2a10937991efcad42fe86cf&templateName=metrictemplate&templateType=METRIC", req.URL.String())
 			if req.Method == "GET" {
 				return &http.Response{
 					StatusCode: 200,
@@ -658,7 +661,7 @@ func TestOpsmxMetricVariousFlows(t *testing.T) {
 			}},
 		}
 		c := NewTestClient(func(req *http.Request) (*http.Response, error) {
-			assert.Equal(t, "https://opsmx.test.tst/autopilot/api/v5/external/template?sha1=a5b311c084cebce5b2e40b388e2e11c6e397c970&templateName=metrictemplate&templateType=METRIC", req.URL.String())
+			assert.Equal(t, "https://opsmx.test.tst/autopilot/api/v5/external/template?sha1=e6128e21c84c25a8e2a10937991efcad42fe86cf&templateName=metrictemplate&templateType=METRIC", req.URL.String())
 			if req.Method == "GET" {
 				return &http.Response{
 					StatusCode: 200,

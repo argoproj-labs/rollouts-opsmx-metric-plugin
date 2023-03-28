@@ -28,6 +28,7 @@ func TestRun(t *testing.T) {
 			"cdIntegration": []byte("true"),
 			"opsmxIsdUrl":   []byte("https://opsmx.secret.tst"),
 			"user":          []byte("admin"),
+			"agentName":     []byte("agent123"),
 			"sourceName":    []byte("sourcename"),
 		}
 		rpcPluginImp.kubeclientset = getFakeClient(secretData)
@@ -76,6 +77,7 @@ func TestResume(t *testing.T) {
 		"cdIntegration": []byte("true"),
 		"opsmxIsdUrl":   []byte("https://opsmx.secret.tst"),
 		"user":          []byte("admin"),
+		"agentName":     []byte("agent123"),
 		"sourceName":    []byte("sourcename"),
 	}
 	rpcPluginImp.kubeclientset = getFakeClient(secretData)
@@ -258,6 +260,7 @@ func TestOpsmxProfile(t *testing.T) {
 			"opsmxIsdUrl": []byte("https://opsmx.secret.tst"),
 			"sourceName":  []byte("sourcename"),
 			"user":        []byte("admin"),
+			"agentName":   []byte("agent123"),
 		}
 		rpcPluginImp.kubeclientset = getFakeClient(secretData)
 		_, err := getOpsmxProfile(rpcPluginImp, opsmxMetric, "ns")
@@ -269,6 +272,7 @@ func TestOpsmxProfile(t *testing.T) {
 			"cdIntegration": []byte("true"),
 			"opsmxIsdUrl":   []byte("https://opsmx.secret.tst"),
 			"user":          []byte("admin"),
+			"agentName":     []byte("agent123"),
 		}
 		rpcPluginImp.kubeclientset = getFakeClient(secretData)
 		_, err := getOpsmxProfile(rpcPluginImp, opsmxMetric, "ns")
@@ -280,6 +284,7 @@ func TestOpsmxProfile(t *testing.T) {
 			"cdIntegration": []byte("true"),
 			"sourceName":    []byte("sourcename"),
 			"user":          []byte("admin"),
+			"agentName":     []byte("agent123"),
 		}
 		rpcPluginImp.kubeclientset = getFakeClient(secretData)
 		_, err := getOpsmxProfile(rpcPluginImp, opsmxMetric, "ns")
@@ -291,6 +296,7 @@ func TestOpsmxProfile(t *testing.T) {
 			"cdIntegration": []byte("true"),
 			"sourceName":    []byte("sourcename"),
 			"user":          []byte("admin"),
+			"agentName":     []byte("agent123"),
 		}
 		rpcPluginImp.kubeclientset = getFakeClient(secretData)
 		_, err := getOpsmxProfile(rpcPluginImp, opsmxMetric, "ns")
@@ -318,12 +324,37 @@ func TestOpsmxProfile(t *testing.T) {
 		assert.Contains(t, err.Error(), "`cdIntegration` should be either true or false")
 	})
 
+	t.Run("agentName is not present in the secret - an error should be raised", func(t *testing.T) {
+		secretData := map[string][]byte{
+			"cdIntegration": []byte("true"),
+			"opsmxIsdUrl":   []byte("https://opsmx.secret.tst"),
+			"user":          []byte("admin"),
+			"sourceName":    []byte("sourcename"),
+		}
+		rpcPluginImp.kubeclientset = getFakeClient(secretData)
+		_, err := getOpsmxProfile(rpcPluginImp, opsmxMetric, "ns")
+		assert.Contains(t, err.Error(), "`agentName` key not present in the secret file")
+	})
+
+	t.Run("cdIntegration is false in the secret and agentName is not present- no error is raised", func(t *testing.T) {
+		secretData := map[string][]byte{
+			"cdIntegration": []byte("false"),
+			"opsmxIsdUrl":   []byte("https://opsmx.secret.tst"),
+			"user":          []byte("admin"),
+			"sourceName":    []byte("sourcename"),
+		}
+		rpcPluginImp.kubeclientset = getFakeClient(secretData)
+		_, err := getOpsmxProfile(rpcPluginImp, opsmxMetric, "ns")
+		assert.Nil(t, err)
+	})
+
 	t.Run("basic flow - no error is raised", func(t *testing.T) {
 		secretData := map[string][]byte{
 			"cdIntegration": []byte("true"),
 			"opsmxIsdUrl":   []byte("https://opsmx.secret.tst"),
 			"user":          []byte("admin"),
 			"sourceName":    []byte("sourcename"),
+			"agentName":     []byte("agent123"),
 		}
 		rpcPluginImp.kubeclientset = getFakeClient(secretData)
 		_, err := getOpsmxProfile(rpcPluginImp, opsmxMetric, "ns")
@@ -336,6 +367,7 @@ func TestOpsmxProfile(t *testing.T) {
 			"opsmxIsdUrl":   []byte("https://opsmx.secret.tst"),
 			"user":          []byte("admin"),
 			"sourceName":    []byte("sourcename"),
+			"agentName":     []byte("agent123"),
 		}
 		rpcPluginImp.kubeclientset = getFakeClient(secretData)
 
