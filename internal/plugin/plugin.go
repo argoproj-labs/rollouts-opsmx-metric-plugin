@@ -17,6 +17,7 @@ import (
 
 	"github.com/argoproj/argo-rollouts/metricproviders/plugin"
 	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	argoclientset "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 	metricutil "github.com/argoproj/argo-rollouts/utils/metric"
 	timeutil "github.com/argoproj/argo-rollouts/utils/time"
 	log "github.com/sirupsen/logrus"
@@ -39,9 +40,10 @@ const (
 
 // Here is a real implementation of MetricsPlugin
 type RpcPlugin struct {
-	LogCtx        log.Entry
-	kubeclientset kubernetes.Interface
-	client        http.Client
+	LogCtx            log.Entry
+	kubeclientset     kubernetes.Interface
+	argoProjClientset argoclientset.Interface
+	client            http.Client
 }
 
 type opsmxProfile struct {
@@ -58,14 +60,20 @@ func (g *RpcPlugin) InitPlugin() types.RpcError {
 		return types.RpcError{ErrorString: err.Error()}
 	}
 
-	clientset, err := kubernetes.NewForConfig(config)
+	clientsetK8s, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return types.RpcError{ErrorString: err.Error()}
+	}
+
+	argoclient, err := argoclientset.NewForConfig(config)
 	if err != nil {
 		return types.RpcError{ErrorString: err.Error()}
 	}
 
 	httpclient := NewHttpClient()
 	g.client = httpclient
-	g.kubeclientset = clientset
+	g.kubeclientset = clientsetK8s
+	g.argoProjClientset = argoclient
 
 	return types.RpcError{}
 }
@@ -86,7 +94,7 @@ func (g *RpcPlugin) Run(analysisRun *v1alpha1.AnalysisRun, metric v1alpha1.Metri
 	if err := checkISDUrl(g, opsmxProfileData.opsmxIsdUrl); err != nil {
 		return metricutil.MarkMeasurementError(newMeasurement, fmt.Errorf("error in processing url %s", opsmxProfileData.opsmxIsdUrl))
 	}
-	payload, err := OPSMXMetric.process(g, opsmxProfileData, analysisRun.Namespace)
+	payload, err := OPSMXMetric.process(g, opsmxProfileData, analysisRun)
 	if err != nil {
 		return metricutil.MarkMeasurementError(newMeasurement, err)
 	}

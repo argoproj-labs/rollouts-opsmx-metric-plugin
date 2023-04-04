@@ -1,12 +1,16 @@
 package plugin
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type OPSMXMetric struct {
@@ -92,7 +96,7 @@ type service struct {
 	baselineScopeVariables string
 }
 
-func (metric *OPSMXMetric) process(g *RpcPlugin, opsmxProfileData opsmxProfile, ns string) (string, error) {
+func (metric *OPSMXMetric) process(g *RpcPlugin, opsmxProfileData opsmxProfile, analysisRun *v1alpha1.AnalysisRun) (string, error) {
 	if err := metric.basicChecks(); err != nil {
 		return "", err
 	}
@@ -108,7 +112,11 @@ func (metric *OPSMXMetric) process(g *RpcPlugin, opsmxProfileData opsmxProfile, 
 	if err := metric.setIntervalTime(); err != nil {
 		return "", err
 	}
-	services, err := metric.processServices(g, opsmxProfileData, ns)
+	if err := metric.getApplicationName(g, opsmxProfileData, analysisRun); err != nil {
+		return "", err
+	}
+
+	services, err := metric.processServices(g, opsmxProfileData, analysisRun.Namespace)
 	if err != nil {
 		return "", err
 	}
@@ -421,4 +429,40 @@ func (metric *OPSMXMetric) validateMetrics(item OPSMXService, serviceName string
 		}
 	}
 	return isMetric, nil
+}
+
+func (metric *OPSMXMetric) getApplicationName(g *RpcPlugin, opsmxProfileData opsmxProfile, analysisRun *v1alpha1.AnalysisRun) error {
+	if metric.Application != "" || opsmxProfileData.cdIntegration == cdIntegrationArgoRollouts {
+		return nil
+	}
+	if len(analysisRun.OwnerReferences) == 0 {
+		return fmt.Errorf("error in retrieving Application name for AnalysisRun %s: no OwnerReferences found", analysisRun.Name)
+	}
+	ownerName := analysisRun.OwnerReferences[0].Name
+	ownerKind := analysisRun.OwnerReferences[0].Kind
+
+	var resourceLabels map[string]string
+	if ownerKind == "Rollout" {
+		rollout, err := g.argoProjClientset.ArgoprojV1alpha1().Rollouts(analysisRun.Namespace).Get(context.TODO(), ownerName, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("error in retrieving Application name from %s %s :%v", ownerKind, ownerName, err)
+		}
+		resourceLabels = rollout.Labels
+	} else if ownerKind == "Experiment" {
+		experiment, err := g.argoProjClientset.ArgoprojV1alpha1().Experiments(analysisRun.Namespace).Get(context.TODO(), ownerName, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("error in retrieving Application name from %s %s :%v", ownerKind, ownerName, err)
+		}
+		resourceLabels = experiment.Labels
+	} else {
+		return fmt.Errorf("analysisTemplate validation error: Application Name not mentioned nor can it be derived")
+	}
+
+	appName, ok := resourceLabels["argocd.argoproj.io/instance"]
+	if !ok {
+		return fmt.Errorf("error in getting Application Name from %s %s: label argocd.argoproj.io/instance is not present", ownerKind, ownerName)
+	}
+	metric.Application = appName
+
+	return nil
 }

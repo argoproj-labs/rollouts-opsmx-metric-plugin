@@ -407,5 +407,17 @@ func getFakeClient(data map[string][]byte) *k8sfake.Clientset {
 }
 
 func newAnalysisRun() *v1alpha1.AnalysisRun {
-	return &v1alpha1.AnalysisRun{}
+	return &v1alpha1.AnalysisRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            "analysisRunTest",
+			Namespace:       "default",
+			OwnerReferences: []metav1.OwnerReference{{Name: "rolloutTest", Kind: "Rollout"}},
+		},
+		Spec: v1alpha1.AnalysisRunSpec{
+			Metrics: []v1alpha1.Metric{{
+				Name: "metricTest",
+			}},
+		},
+		Status: v1alpha1.AnalysisRunStatus{},
+	}
 }

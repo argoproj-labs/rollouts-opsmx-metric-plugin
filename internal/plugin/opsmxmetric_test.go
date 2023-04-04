@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned/fake"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -42,7 +44,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 			}},
 		}
 
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "pass score cannot be less than marginal score")
 	})
 
@@ -57,7 +59,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 			}},
 		}
 
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "provide either lifetimeMinutes or end time")
 	})
 
@@ -75,7 +77,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 			}},
 		}
 
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "both canaryStartTime and baselineStartTime should be kept same while using endTime argument for analysis")
 	})
 
@@ -93,7 +95,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 			}},
 		}
 
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "canaryStartTime cannot be greater than endTime")
 	})
 
@@ -111,7 +113,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 			}},
 		}
 
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "error in parsing canaryStartTime")
 	})
 
@@ -129,7 +131,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 			}},
 		}
 
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "error in parsing baselineStartTime")
 	})
 
@@ -147,7 +149,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 			}},
 		}
 
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "error in parsing endTime")
 	})
 
@@ -163,7 +165,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 			}},
 		}
 
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "lifetimeMinutes cannot be less than 3 minutes")
 	})
 	t.Run("intervalTime cannot be less than 3 minutes- an error should be raised", func(t *testing.T) {
@@ -179,7 +181,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 			}},
 		}
 
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "intervalTime cannot be less than 3 minutes")
 	})
 	t.Run("intervalTime should be given along with lookBackType to perform interval analysis - an error should be raised", func(t *testing.T) {
@@ -195,7 +197,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 			}},
 		}
 
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "intervalTime should be given along with lookBackType to perform interval analysis")
 	})
 
@@ -205,7 +207,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 			Pass:            90,
 			Marginal:        85,
 		}
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "at least one of log or metric context must be provided")
 	})
 
@@ -222,7 +224,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 					ServiceName: "service2",
 				},
 			}}
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "at least one of log or metric context must be provided")
 	})
 
@@ -249,7 +251,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 					LogTemplateName:      "logtemplate",
 				},
 			}}
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "mismatch in number of log scope variables and baseline/canary log scope of service")
 	})
 
@@ -269,7 +271,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 					LogTemplateName:      "logtemplate",
 				},
 			}}
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "missing canary/baseline for log analysis of service")
 	})
 
@@ -289,7 +291,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 					BaselineLogScope:     "podHashBaseline",
 				},
 			}}
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "provide either a service specific log template or global log template for service")
 	})
 
@@ -309,7 +311,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 					LogTemplateName:      "logtemplate",
 				},
 			}}
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "missing log Scope placeholder")
 	})
 
@@ -336,7 +338,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 					LogTemplateName:      "logtemplate",
 				},
 			}}
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "mismatch in number of metric scope variables and baseline/canary metric scope of service")
 	})
 
@@ -356,7 +358,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 					LogTemplateName:      "logtemplate",
 				},
 			}}
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "missing canary/baseline for metric analysis of service")
 	})
 
@@ -376,7 +378,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 					LogTemplateName:      "logtemplate",
 				},
 			}}
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "missing canary/baseline for metric analysis of service")
 	})
 
@@ -392,7 +394,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 					CanaryMetricScope:    "podHashCanary",
 				},
 			}}
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "provide either a service specific metric template or global metric template for service")
 	})
 
@@ -412,7 +414,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 					LogTemplateName:     "logtemplate",
 				},
 			}}
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "missing metric Scope placeholder")
 	})
 
@@ -437,7 +439,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 					ServiceName:          "serviceName",
 				},
 			}}
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "serviceName 'serviceName' mentioned exists more than once")
 	})
 
@@ -455,7 +457,7 @@ func TestOpsmxMetricValidations(t *testing.T) {
 				BaselineLogScope:  "podHashBaseline",
 			}},
 		}
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "template config map validation error")
 	})
 
@@ -464,9 +466,10 @@ func TestOpsmxMetricValidations(t *testing.T) {
 func TestOpsmxMetricVariousFlows(t *testing.T) {
 	logCtx := *log.WithFields(log.Fields{"plugin-test": "opsmx"})
 	rpcPluginImp := &RpcPlugin{
-		LogCtx:        logCtx,
-		kubeclientset: k8sfake.NewSimpleClientset(),
-		client:        NewHttpClient(),
+		LogCtx:            logCtx,
+		kubeclientset:     k8sfake.NewSimpleClientset(),
+		argoProjClientset: newFakeRolloutsClient(),
+		client:            NewHttpClient(),
 	}
 	opsmxProfileData := opsmxProfile{cdIntegration: "argocd",
 		user:        "admin",
@@ -493,7 +496,7 @@ func TestOpsmxMetricVariousFlows(t *testing.T) {
 			}},
 		}
 		expectedPayload := `{"application":"newapp","sourceName":"sourceName","sourceType":"argocd","agentName":"agent123","canaryConfig":{"lifetimeMinutes":"30","lookBackType":"growing","interval":"3","delay":"1","canaryHealthCheckHandler":{"minimumCanaryResultScore":"85"},"canarySuccessCriteria":{"canaryResultScore":"90"}},"canaryDeployments":[{"canaryStartTimeMs":"1660137300000","baselineStartTimeMs":"1660137300000","canary":{"metric":{"service1":{"serviceGate":"gate1","pod_name":"podHashCanary","template":"metrictemplate","templateVersion":"v1.0"}}},"baseline":{"metric":{"service1":{"serviceGate":"gate1","pod_name":"podHashBaseline","template":"metrictemplate","templateVersion":"v1.0"}}}}]}`
-		payload, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		payload, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		expectedBodyI, bodyI := getPayload(expectedPayload, payload)
 		assert.Equal(t, expectedBodyI, bodyI)
 		assert.Nil(t, err)
@@ -527,7 +530,32 @@ func TestOpsmxMetricVariousFlows(t *testing.T) {
 			},
 		}
 		expectedPayload := `{"application":"newapp","sourceName":"sourceName","sourceType":"argocd","agentName":"agent123","canaryConfig":{"lifetimeMinutes":"30","canaryHealthCheckHandler":{"minimumCanaryResultScore":"85"},"canarySuccessCriteria":{"canaryResultScore":"90"}},"canaryDeployments":[{"canaryStartTimeMs":"1660137300000","baselineStartTimeMs":"1660137300000","canary":{"log":{"service2":{"serviceGate":"gate2","kubernetes.container_name":"oes-datascience-cr","template":"logTemplate"}},"metric":{"service1":{"serviceGate":"gate1","job_name":"oes-platform-cr","template":"metricTemplate"},"service2":{"serviceGate":"gate2","job_name":"oes-sapor-cr","template":"metricTemplate"}}},"baseline":{"log":{"service2":{"serviceGate":"gate2","kubernetes.container_name":"oes-datascience-br","template":"logTemplate"}},"metric":{"service1":{"serviceGate":"gate1","job_name":"oes-platform-br","template":"metricTemplate"},"service2":{"serviceGate":"gate2","job_name":"oes-sapor-br","template":"metricTemplate"}}}}]}`
-		payload, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		payload, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
+		expectedBodyI, bodyI := getPayload(expectedPayload, payload)
+		assert.Equal(t, expectedBodyI, bodyI)
+		assert.Nil(t, err)
+	})
+
+	t.Run("application name is not mentioned in the template - name should be picked from the owner", func(t *testing.T) {
+		opsmxMetric := OPSMXMetric{
+			BaselineStartTime: "2022-08-10T13:15:00Z",
+			CanaryStartTime:   "2022-08-10T13:15:00Z",
+			EndTime:           "2022-08-10T13:45:00Z",
+			IntervalTime:      3,
+			Delay:             1,
+			Pass:              90,
+			Marginal:          85,
+			LookBackType:      "growing",
+			Services: []OPSMXService{{
+				MetricScopeVariables:  "pod_name",
+				BaselineMetricScope:   "podHashBaseline",
+				CanaryMetricScope:     "podHashCanary",
+				MetricTemplateName:    "metrictemplate",
+				MetricTemplateVersion: "v1.0",
+			}},
+		}
+		expectedPayload := `{"application":"appFromOwnerRollout","sourceName":"sourceName","sourceType":"argocd","agentName":"agent123","canaryConfig":{"lifetimeMinutes":"30","lookBackType":"growing","interval":"3","delay":"1","canaryHealthCheckHandler":{"minimumCanaryResultScore":"85"},"canarySuccessCriteria":{"canaryResultScore":"90"}},"canaryDeployments":[{"canaryStartTimeMs":"1660137300000","baselineStartTimeMs":"1660137300000","canary":{"metric":{"service1":{"serviceGate":"gate1","pod_name":"podHashCanary","template":"metrictemplate","templateVersion":"v1.0"}}},"baseline":{"metric":{"service1":{"serviceGate":"gate1","pod_name":"podHashBaseline","template":"metrictemplate","templateVersion":"v1.0"}}}}]}`
+		payload, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		expectedBodyI, bodyI := getPayload(expectedPayload, payload)
 		assert.Equal(t, expectedBodyI, bodyI)
 		assert.Nil(t, err)
@@ -579,7 +607,7 @@ func TestOpsmxMetricVariousFlows(t *testing.T) {
 		cmMetric := map[string]string{"metrictemplate": metricsData}
 		rpcPluginImp.kubeclientset = getFakeClientForCM(cmMetric)
 		rpcPluginImp.client = c
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Nil(t, err)
 	})
 
@@ -642,7 +670,7 @@ func TestOpsmxMetricVariousFlows(t *testing.T) {
 
 		rpcPluginImp.kubeclientset = getFakeClientForCM(cmMetric)
 		rpcPluginImp.client = c
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Nil(t, err)
 	})
 
@@ -704,7 +732,7 @@ func TestOpsmxMetricVariousFlows(t *testing.T) {
 
 		rpcPluginImp.kubeclientset = getFakeClientForCM(cmMetric)
 		rpcPluginImp.client = c
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "something went wrong")
 	})
 
@@ -726,7 +754,7 @@ func TestOpsmxMetricVariousFlows(t *testing.T) {
 		{"filterKey":"pod_name","accountName":"newacc","data":{"isNormalize":false,"groups":[{"metrics":[{"metricType":"ADVANCED","metricWeight":1,"nanStrategy":"ReplaceWithZero","riskDirection":"Lower","name":"avg(rate(nginx_ingress_controller_ingress_upstream_latency_seconds{namespace=\"${namespace_key}\", service= \"${service}\",ingress = \"${ingress}\", quantile =\"0.9\"}[5m]))","criticality":"LOW","watchlist":false}],"group":"Upstream Service Latency Per Ingress - 90th Percentile"}]},"templateName":"template"}`
 		cmMetric := map[string]string{"metrictemplate": metricsData}
 		rpcPluginImp.kubeclientset = getFakeClientForCM(cmMetric)
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "Mismatch between templateName and data.metrictemplate key")
 	})
 
@@ -749,7 +777,7 @@ func TestOpsmxMetricVariousFlows(t *testing.T) {
 		{"filterKey":"${namespace_key}","tagEnabled":true,"monitoringProvider":"ELASTICSEARCH","accountName":"ds-elastic","scoringAlgorithm":"Canary","index":"kubernetes*","responseKeywords":"log,message","tags":[{"string":"NonOutOfMemoryError","tag":"tag1"}],"errorTopics":[]}`
 		cmMetric := map[string]string{"template": logData}
 		rpcPluginImp.kubeclientset = getFakeClientForCM(cmMetric)
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "missing data element logtemplate")
 	})
 
@@ -772,7 +800,7 @@ func TestOpsmxMetricVariousFlows(t *testing.T) {
 		{"filterKey":"${namespace_key}","tagEnabled":true,"monitoringProvider":"ELASTICSEARCH","accountName":"ds-elastic","scoringAlgorithm":"Canary","index":"kubernetes*","responseKeywords":"log,message","tags":[{"string":"NonOutOfMemoryError","tag":"tag1"}],"errorTopics":[]}`
 		cmMetric := map[string]string{"logtemplate": logData}
 		rpcPluginImp.kubeclientset = getFakeClientForCM(cmMetric)
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Contains(t, err.Error(), "template name not provided inside json")
 	})
 
@@ -826,7 +854,7 @@ func TestOpsmxMetricVariousFlows(t *testing.T) {
 		cmMetric := map[string]string{"logtemplate": logData}
 		rpcPluginImp.client = c
 		rpcPluginImp.kubeclientset = getFakeClientForCM(cmMetric)
-		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, "ns")
+		_, err := opsmxMetric.process(rpcPluginImp, opsmxProfileData, newAnalysisRun())
 		assert.Nil(t, err)
 	})
 
@@ -873,4 +901,21 @@ func NewTestClient(fn RoundTripFunc) http.Client {
 	return http.Client{
 		Transport: fn,
 	}
+}
+
+func newFakeRolloutsClient() *fake.Clientset {
+
+	rollout := v1alpha1.Rollout{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Rollout",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "rolloutTest",
+			Namespace: "default",
+			Labels:    map[string]string{"argocd.argoproj.io/instance": "appFromOwnerRollout"},
+		},
+		Spec: v1alpha1.RolloutSpec{},
+	}
+
+	return fake.NewSimpleClientset(&rollout)
 }
